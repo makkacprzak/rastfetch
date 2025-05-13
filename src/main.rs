@@ -44,17 +44,16 @@ async fn main() {
         let config_path = format!("{}/.config/rastfetch/config.json", home_dir);
         let mut file = fs::File::create(config_path).expect("Unable to create config file");
         let config_content =
-        r#"{
-            "modules": [
-                "title",
-                "separator",
-                "os",
-                "kernel",
-                "uptime",
-                "memory"
-                
-            ]
-        }"#;
+r#"{
+    "modules": [
+        "title",
+        "separator",
+        "os",
+        "kernel",
+        "uptime",
+        "memory"       
+    ]
+}"#;
         file.write_all(config_content.as_bytes()).expect("Unable to write to config file");
         io::stdout().write_all(b"Config file created\n").unwrap();
         return;
@@ -102,7 +101,7 @@ async fn main() {
         results[index] = result;
     }
 
-    let output_lines = format_terminal_output(&logo_lines, &results, max_width);
+    let output_lines = format_terminal_output(&logo_lines, &results, max_width + 3);
     let os = System::name().unwrap_or("Can't find system name".to_string());
     let binding = &[Color::White];
     let os_color = *os_map::OS_COLORS.get(os.as_str()).unwrap_or(&(binding as &[Color]));
@@ -134,22 +133,24 @@ fn format_terminal_output(logo_lines: &[String], results: &[String], img_width: 
     let mut final_vector = Vec::new();
 
     for i in 0..longer_length {
-        let mut scalony_string = String::new();
+        let mut final_string = String::new();
 
         let logo_line = logo_lines.get(i).map(|s| s.as_str()).unwrap_or("");
         let result_line = results.get(i).map(|s| s.as_str()).unwrap_or("");
 
+        // Liczenie rzeczywistej szerokości logo bez znaczników
+        let actual_logo_width = count_chars_without_markers(logo_line);
         let mut prefix = " ".repeat(img_width);
 
         // Wstaw logo_line na początek prefixu (lub jego część)
         if !logo_line.is_empty() {
-            prefix.replace_range(0..logo_line.len().min(img_width), logo_line);
+            prefix.replace_range(0..actual_logo_width.min(img_width), logo_line);
         }
 
-        scalony_string.push_str(&prefix);
-        scalony_string.push_str(result_line);
+        final_string.push_str(&prefix);
+        final_string.push_str(result_line);
 
-        final_vector.push(scalony_string);
+        final_vector.push(final_string);
     }
 
     final_vector
@@ -210,7 +211,7 @@ fn read_logo(logo: Option<String>) -> String {
         }
     }else{
         let os = System::name().unwrap_or("Can't find system name".to_string());
-        let os_short =  *os_map::OS_MAP.get(&os).unwrap_or(&"unknown");
+        let os_short =  *os_map::OS_LOGO.get(&os).unwrap_or(&"unknown");
         let path = format!("logo/ascii/{}.txt", os_short);
         
         if let Some(file) = ASSETS.get_file(path) {

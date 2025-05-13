@@ -4,8 +4,11 @@ use sysinfo::{
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::future::Future;
+use std::process::Command;
 use std::sync::Arc;
 use whoami;
+
+use crate::os_map;
 
 type ModuleFunction = Arc<dyn Fn() -> Pin<Box<dyn Future<Output = String> + Send>> + Send + Sync>;
 
@@ -20,6 +23,7 @@ pub fn get_module_functions() -> HashMap<&'static str, ModuleFunction> {
     module_functions.insert("kernel", Arc::new(|| Box::pin(fetch_kernel())));
     module_functions.insert("uptime", Arc::new(|| Box::pin(fetch_uptime())));
     module_functions.insert("memory", Arc::new(|| Box::pin(fetch_memory())));
+    module_functions.insert("shell", Arc::new(|| Box::pin(get_shell())));
 
     module_functions
 }
@@ -31,7 +35,7 @@ async fn fetch_title() -> String {
     title
 }
 async fn fetch_separator() -> String {
-    let separator = "--------------------------------";
+    let separator = "$2-----------$1";
     separator.to_string()
 }
 async fn fetch_os() -> String {
@@ -63,6 +67,29 @@ async fn fetch_memory() -> String {
         used_percentage as u8
     );
     memory_string
+}
+
+async fn get_shell() -> String {
+    if let Ok(shell) = std::env::var("SHELL") {
+        let shell_name = shell.split('/').last().unwrap_or("Unknown");
+        let shell_command = os_map::SHELL_VERSIONS.get(shell_name).unwrap_or(&"");
+        if shell_command.is_empty() {
+            return format!("$1Shell:$2 {}", shell_name)
+        }
+        match Command::new(&shell)
+            .arg("-c")
+            .arg(shell_command)
+            .output()
+        {
+            Ok(output) => {
+                let shell_version = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                return format!("$1Shell:$2 {} {}", shell_name, shell_version);
+            }
+            Err(_) => return format!("$1Shell:$2 {} Unknown", shell_name),
+        }
+    } else {
+        "$1Shell:$2 Unknown".to_string()
+    }
 }
 
 fn format_time(seconds: u64) -> String {
