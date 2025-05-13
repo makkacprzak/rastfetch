@@ -48,7 +48,11 @@ async fn main() {
             "modules": [
                 "title",
                 "separator",
-                "os"
+                "os",
+                "kernel",
+                "uptime",
+                "memory"
+                
             ]
         }"#;
         file.write_all(config_content.as_bytes()).expect("Unable to write to config file");
