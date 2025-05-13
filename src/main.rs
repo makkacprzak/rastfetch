@@ -35,6 +35,29 @@ struct Args {
 async fn main() {
     let args = Args::parse();
 
+
+    if args.config{
+        let home_dir = env::var("HOME").expect("Unable to find home directory");
+        let path = format!("{}/.config/rastfetch", home_dir);
+        fs::create_dir_all(path).expect("Unable to create config directory");
+        io::stdout().write_all(b"Config directory created\n").unwrap();
+        let config_path = format!("{}/.config/rastfetch/config.json", home_dir);
+        let mut file = fs::File::create(config_path).expect("Unable to create config file");
+        let config_content =
+        r#"{
+            "modules": [
+                "title",
+                "separator",
+                "os"
+            ]
+        }"#;
+        file.write_all(config_content.as_bytes()).expect("Unable to write to config file");
+        io::stdout().write_all(b"Config file created\n").unwrap();
+        return;
+    }
+    
+
+
     // Load the config file
     let modules = get_modules().unwrap();
 
@@ -82,28 +105,6 @@ async fn main() {
     for line in output_lines {
         print_colored(&line, os_color.to_vec()).unwrap();
     }
-
-    if args.config{
-        let home_dir = env::var("HOME").expect("Unable to find home directory");
-        let path = format!("{}/.config/rastfetch", home_dir);
-        fs::create_dir_all(path).expect("Unable to create config directory");
-        io::stdout().write_all(b"Config directory created\n").unwrap();
-        let config_path = format!("{}/.config/rastfetch/config.json", home_dir);
-        let mut file = fs::File::create(config_path).expect("Unable to create config file");
-        let config_content =
-        r#"{
-            "modules": [
-                "title",
-                "separator",
-                "os"
-            ]
-        }"#;
-        file.write_all(config_content.as_bytes()).expect("Unable to write to config file");
-        io::stdout().write_all(b"Config file created\n").unwrap();
-        return;
-    }
-    
-
 
 }
 
