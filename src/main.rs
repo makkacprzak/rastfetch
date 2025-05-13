@@ -51,7 +51,8 @@ r#"{
         "os",
         "kernel",
         "uptime",
-        "memory"       
+        "memory",
+        "shell"
     ]
 }"#;
         file.write_all(config_content.as_bytes()).expect("Unable to write to config file");
