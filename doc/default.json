@@ -1,0 +1,11 @@
+{
+"modules": [
+  "title",
+  "separator",
+  "os",
+  "kernel",
+  "uptime",
+  "memory",
+  "shell"
+  ]
+}
