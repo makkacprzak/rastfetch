@@ -7,3 +7,4 @@
 5) uptime - your uptime
 6) memory - [x]GB / [y]GB used
 7) shell - your current shell and version
+8) cpu - your cpu name, core number, and frequency

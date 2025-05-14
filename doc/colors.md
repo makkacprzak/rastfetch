@@ -1,5 +1,8 @@
 # Colors
 
-1) Fedora - [$1 Blue, $2 White]
-2) Ubuntu - [$1 Red, $2 White]
-3) Bazzite - [$1 Green, $2 White]
+Color table positions are interpreted as positive integers, so ex. Fedora[0] color will be drawn when marker $1 appears, etc.
+
+1) Fedora - [Blue, White, Blue]
+2) Ubuntu - [Red, White, Red]
+3) Bazzite - [Magenta, White, Magenta]
+4) Darwin - [Green, White, Yellow, Red, Magenta, Cyan]
