@@ -20,15 +20,24 @@ const ASSETS: Dir = include_dir!("assets");
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// Show logo
-    #[arg(short, long)]
-    logo: Option<String>,
+    #[command(flatten)]
+    logo_args: LogoArgs,
 
     /// Create default config
-    #[arg(short, long)]
+    #[arg(long)]
     config: bool,
 }
 
+#[derive(Parser)]
+struct LogoArgs {
+    /// Choose logo from stock logos
+    #[arg(short, long)]
+    logo: Option<String>,
+
+    /// Add this flag -l/--logo if you want to use cutom logo in .config/rastfetch
+    #[arg(short, long, default_value_t = false)]
+    custom: bool,
+}
 
 
 #[tokio::main]
@@ -84,7 +93,7 @@ r#"{
         }
     }
 
-    let logo = read_logo(args.logo);
+    let logo = read_logo(&args);
     let logo_lines: Vec<String> = logo.lines().map(|line| line.to_string()).collect();
 
     let mut max_width = 0;
@@ -110,6 +119,40 @@ r#"{
         print_colored(&line, os_color.to_vec()).unwrap();
     }
 
+}
+
+
+fn read_logo(args: &Args) -> String {
+    if let Some(logo_value) = args.logo_args.logo.as_deref(){
+        if args.logo_args.custom{
+            let home_dir = env::var("HOME").expect("Unable to find home directory");
+            let path = format!("{}/.config/rastfetch/{}", home_dir, logo_value);
+
+            match fs::read_to_string(path){
+                Ok(contents) => contents.to_string(),
+                Err(e) => "Error reading logo file: ".to_string() + &e.to_string(),
+            }
+        }else{
+            let path = format!("logo/ascii/{}.txt", logo_value);
+            if let Some(file) = ASSETS.get_file(path) {
+                let contents = file.contents_utf8().unwrap();
+                contents.to_string()
+            } else {
+                "Logo not found in stock".to_string()
+            }
+        }
+    }else{
+        let os = System::name().unwrap_or("Can't find system name".to_string());
+        let os_short =  *os_map::OS_LOGO.get(&os).unwrap_or(&"unknown");
+        let path = format!("logo/ascii/{}.txt", os_short);
+        
+        if let Some(file) = ASSETS.get_file(path) {
+            let contents = file.contents_utf8().unwrap();
+            contents.to_string()
+        } else {
+            "Default logo not found".to_string()
+        }
+    }
 }
 
 fn count_chars_without_markers(text: &str) -> usize {
@@ -200,30 +243,6 @@ fn print_colored(text: &str, colors: Vec<Color>) -> io::Result<()> {
     stdout.flush()?;
     Ok(())
 }
-
-fn read_logo(logo: Option<String>) -> String {
-    if let Some(logo_value) = logo.as_deref(){
-        let home_dir = env::var("HOME").expect("Unable to find home directory");
-        let path = format!("{}/.config/rastfetch/{}", home_dir, logo_value);
-
-        match fs::read_to_string(path){
-            Ok(contents) => contents.to_string(),
-            Err(e) => "Error reading logo file: ".to_string() + &e.to_string(),
-        }
-    }else{
-        let os = System::name().unwrap_or("Can't find system name".to_string());
-        let os_short =  *os_map::OS_LOGO.get(&os).unwrap_or(&"unknown");
-        let path = format!("logo/ascii/{}.txt", os_short);
-        
-        if let Some(file) = ASSETS.get_file(path) {
-            let contents = file.contents_utf8().unwrap();
-            contents.to_string()
-        } else {
-            "Default logo not found".to_string()
-        }
-    }
-}
-
 
 fn read_config() -> Result<Value, Box<dyn std::error::Error>> {
     let config_path = format!("{}/.config/rastfetch/config.json", env::var("HOME")?);

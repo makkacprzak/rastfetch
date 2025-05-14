@@ -45,19 +45,24 @@ nano config.json
 4) You can find all available modules in [modules.md](doc/modules.md). To change which modules are used just and in which order, just add them to the config.json
 
 # Change logo displayed
-1) Rastfetch currently supports:
-* Normal ascii art
-* Colored ascii art. Each OS has different colors assigned to `$1 $2 $3` markers, that tell the renderer to change output color. You can see examples of this in [ascii](assets/ascii). You can see colors for your system in [colors](doc/colors.md)
-* Colored ansi format art.
-2) Copy your custom logos to `~/.config/rastfetch/`
-3) Run rastfetch with a custom logo with
+#### Rastfetch currently supports:
+1) Colored ascii art courtesy of [fastfetch](https://github.com/fastfetch-cli/fastfetch). You can see all available logos in [ascii](assets/logo/ascii). To run with one of these stock logos run:
 ```bash
-rastfetch -l [filename].txt
+rastfetch -l [logo_name_without_.txt]
+```
+2) Personal custom logos in:
+* ansi format
+* normal ascii
+* colored ascii with `$[1-9]` symbols. To see examples check out [ascii](assets/logo/ascii), to check colors see [colors.md](doc/colors.md)
+
+To use a custom logo, first place it in your `~/.config/rastfetch` directory, and then run:
+```bash
+rastfetch -lc [file_name]
 ```
 
 # Contributions
 
-Contributions meant to expand the list of available modules, increase speed or efficiency or increase support for different distros are very much welcome. All contributions will automaticlly be licensed under the projects [MIT License](LICENSE.md).
+Contributions meant to expand the list of available modules, increase speed or efficiency or increase support for different distros are very much welcome. All contributions will automaticlly be licensed under the project's [MIT](LICENSE.md) license.
 
 # Disclosure
 

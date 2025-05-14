@@ -1,4 +1,4 @@
 /target
-.Ds_Store
-/assets/.Ds_Store
-/assets/ascii/.Ds_Store
+.DS_Store
+/assets/.DS_Store
+/assets/ascii/.DS_Store
