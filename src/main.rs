@@ -15,7 +15,7 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 mod os_map;
 mod modules;
 
-const ASSETS: Dir = include_dir!("assets");
+pub static ASSETS: Dir = include_dir!("assets");
 const DOC: Dir = include_dir!("doc");
 
 #[derive(Parser)]
@@ -27,6 +27,10 @@ struct Args {
     /// Create default config
     #[arg(long)]
     config: bool,
+
+    /// Don't print logo
+    #[arg(long, default_value_t = false)]
+    nologo: bool,
 }
 
 #[derive(Parser)]
@@ -58,9 +62,12 @@ async fn main() {
             file.write_all(contents.as_bytes()).expect("Unable to write to config file");
         } else {
             io::stdout().write_all(b"Default config file not found\n").unwrap();
+            return;
         }
         return;
     }
+    
+
 
     // Load the config file
     let modules = get_modules().unwrap();
@@ -84,30 +91,48 @@ async fn main() {
         }
     }
 
-    let logo = read_logo(&args);
-    let logo_lines: Vec<String> = logo.lines().map(|line| line.to_string()).collect();
-
-    let mut max_width = 0;
-    for line in &logo_lines {
-        let stripped_line = strip_str(line);
-        if count_chars_without_markers(&stripped_line) > max_width {
-            max_width = stripped_line.len();
+    if !args.nologo {
+        let logo = read_logo(&args);
+        let logo_lines: Vec<String> = logo.lines().map(|line| line.to_string()).collect();
+        let mut max_width = 0;
+        for line in &logo_lines {
+            let stripped_line = strip_str(line);
+            if count_chars_without_markers(&stripped_line) > max_width {
+                max_width = stripped_line.len();
+            }
+            
         }
-    }
+        // Odbierasz wyniki, umieszczając je w odpowiednich miejscach w wektorze
+        let mut results = vec![String::new(); modules.len()];
+        for _ in tasks {
+            let (index, result) = rx.recv().await.unwrap();
+            results[index] = result;
+        }
 
-    // Odbierasz wyniki, umieszczając je w odpowiednich miejscach w wektorze
-    let mut results = vec![String::new(); modules.len()];
-    for _ in tasks {
-        let (index, result) = rx.recv().await.unwrap();
-        results[index] = result;
-    }
+        let split_results = split_multiline_strings(results);
 
-    let output_lines = format_terminal_output(&logo_lines, &results, max_width + 3);
-    let os = System::name().unwrap_or("Can't find system name".to_string());
-    let binding = &[Color::White];
-    let os_color = *os_map::OS_COLORS.get(os.as_str()).unwrap_or(&(binding as &[Color]));
-    for line in output_lines {
-        print_colored(&line, os_color.to_vec()).unwrap();
+        let output_lines = format_terminal_output(&logo_lines, &split_results, max_width + 3);
+        let os = System::name().unwrap_or("Can't find system name".to_string());
+        let binding = &[Color::White];
+        let os_color = *os_map::OS_COLORS.get(os.as_str()).unwrap_or(&(binding as &[Color]));
+        for line in output_lines {
+            print_colored(&line, os_color.to_vec()).unwrap();
+        }
+    }else{
+        let mut results = vec![String::new(); modules.len()];
+        for _ in tasks {
+            let (index, result) = rx.recv().await.unwrap();
+            results[index] = result;
+        }
+
+        let split_results = split_multiline_strings(results);
+
+        let os = System::name().unwrap_or("Can't find system name".to_string());
+        let binding = &[Color::White];
+        let os_color = *os_map::OS_COLORS.get(os.as_str()).unwrap_or(&(binding as &[Color]));
+        for line in split_results {
+            print_colored(&line, os_color.to_vec()).unwrap();
+        }
     }
 
 }
@@ -161,6 +186,12 @@ fn count_chars_without_markers(text: &str) -> usize {
         count += 1;
     }
     count
+}
+
+fn split_multiline_strings(lines: Vec<String>) -> Vec<String> {
+    lines.into_iter()
+        .flat_map(|line| line.lines().map(|s| s.to_string()).collect::<Vec<String>>())
+        .collect()
 }
 
 fn format_terminal_output(logo_lines: &[String], results: &[String], img_width: usize) -> Vec<String> {

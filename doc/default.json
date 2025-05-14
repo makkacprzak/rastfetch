@@ -4,9 +4,13 @@
   "separator",
   "os",
   "kernel",
-  "uptime",
-  "memory",
   "shell",
-  "cpu"
+  "uptime",
+  "terminal",
+  "cpu",
+  "memory",
+  "swap",
+  "disks",
+  "colors"
   ]
 }
