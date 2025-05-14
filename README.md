@@ -41,19 +41,20 @@ vim config.json
 # with nano
 nano config.json
 ```
-3) Copy default config from [default.json](doc/default.json)
-4) You can find all available modules in [modules.md](doc/modules.md). To change which modules are used just and in which order, just add them to the config.json
+3) (Skip if you used `rastfetch -c`) Copy default config from [default.json](/doc/default.json)
+4) You can find all available modules in [modules.md](/doc/modules.md). To change which modules are used just and in which order, just add them to the config.json
+5) Run `rastfetch`
 
 # Change logo displayed
 #### Rastfetch currently supports:
-1) Colored ascii art courtesy of [fastfetch](https://github.com/fastfetch-cli/fastfetch). You can see all available logos in [ascii](assets/logo/ascii). To run with one of these stock logos run:
+1) Colored ascii art courtesy of [fastfetch](https://github.com/fastfetch-cli/fastfetch). You can see all available logos in [ascii](/assets/logo/ascii). To run with one of these stock logos run:
 ```bash
 rastfetch -l [logo_name_without_.txt]
 ```
 2) Personal custom logos in:
 * ansi format
 * normal ascii
-* colored ascii with `$[1-9]` symbols. To see examples check out [ascii](assets/logo/ascii), to check colors see [colors.md](doc/colors.md)
+* colored ascii with `$[1-9]` symbols. To see examples check out [ascii](/assets/logo/ascii), to check colors see [colors.md](/doc/colors.md)
 
 To use a custom logo, first place it in your `~/.config/rastfetch` directory, and then run:
 ```bash
