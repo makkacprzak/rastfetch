@@ -16,6 +16,7 @@ mod os_map;
 mod modules;
 
 const ASSETS: Dir = include_dir!("assets");
+const DOC: Dir = include_dir!("doc");
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -52,24 +53,13 @@ async fn main() {
         io::stdout().write_all(b"Config directory created\n").unwrap();
         let config_path = format!("{}/.config/rastfetch/config.json", home_dir);
         let mut file = fs::File::create(config_path).expect("Unable to create config file");
-        let config_content =
-r#"{
-    "modules": [
-        "title",
-        "separator",
-        "os",
-        "kernel",
-        "uptime",
-        "memory",
-        "shell"
-    ]
-}"#;
-        file.write_all(config_content.as_bytes()).expect("Unable to write to config file");
-        io::stdout().write_all(b"Config file created\n").unwrap();
-        return;
+        if let Some(doc_file) = DOC.get_file("default.json") {
+            let contents = doc_file.contents_utf8().unwrap();
+            file.write_all(contents.as_bytes()).expect("Unable to write to config file");
+        } else {
+            io::stdout().write_all(b"Default config file not found\n").unwrap();
+        }
     }
-    
-
 
     // Load the config file
     let modules = get_modules().unwrap();

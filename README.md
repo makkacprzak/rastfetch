@@ -29,7 +29,7 @@ cd [path/to/rastfetch/bin]
 # How to use
 
 1) Rastfetch looks for a configuration file under  `~/.config/rastfetch/config.json`.
-2) It sould automatically create a file on this path, but if it doesn't you can create it with either
+2) After installing rastfetch for the first time, or if you want to reset your configuration, run:
 ```bash
 # either
 rastfetch -c
