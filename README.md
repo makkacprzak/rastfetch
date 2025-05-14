@@ -58,7 +58,7 @@ rastfetch -l [logo_name_without_.txt]
 
 To use a custom logo, first place it in your `~/.config/rastfetch` directory, and then run:
 ```bash
-rastfetch -lc [file_name]
+rastfetch -l [file_name] -c
 ```
 
 # Contributions
