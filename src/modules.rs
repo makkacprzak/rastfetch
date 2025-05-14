@@ -1,8 +1,10 @@
 use sysinfo::{
-    CpuRefreshKind, MemoryRefreshKind, RefreshKind, System, Disks
+    CpuRefreshKind, Disk, Disks, MemoryRefreshKind, RefreshKind, System
 };
 use std::collections::HashMap;
 use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::pin::Pin;
 use std::future::Future;
 use std::sync::Arc;
@@ -45,7 +47,7 @@ async fn fetch_separator() -> String {
     separator.to_string()
 }
 async fn fetch_os() -> String {
-    let os = System::name().unwrap_or("Can't find system name".to_string());
+    let os = whoami::distro();
     let os_string = format!("$3OS:$2 {}", os);
     os_string
 }
@@ -146,18 +148,75 @@ async fn fetch_swap() -> String {
 async fn  fetch_disks() -> String {
     let disks = Disks::new_with_refreshed_list();
     let mut buffer = String::new();
+    let mut btrfs_disks:Vec<&Disk> = Vec::new();
+    let mut selected_disks:Vec<&Disk> = Vec::new();
     for disk in disks.list() {
-        let mount_point = disk.mount_point();
+        let file_system = disk.file_system().to_string_lossy();
+        let mount_point = disk.mount_point().to_string_lossy();
+        if file_system == "vfat" || file_system == "overalay" || mount_point == "/boot" {
+            continue;
+        }
+        if file_system == "btrfs" {
+            if mount_point == "/" {
+                btrfs_disks.clear();
+                btrfs_disks.push(disk);
+                break;
+            }
+            btrfs_disks.push(disk);
+            continue;
+        }
+        selected_disks.push(disk);
+    }
+    if btrfs_disks.len() == 1 {
+        let disk = btrfs_disks[0];
+        let file_system = disk.file_system().to_string_lossy();
+        let mount_point = disk.mount_point().to_string_lossy();
         let size = disk.total_space();
         let used = size - disk.available_space();
-        let file_system = disk.file_system();
         let used_percentage = (used as f64 / size as f64) * 100.0;
         let final_str = format!("$3Disk ({}): $2{:.2} $3GB / $2{:.2} $3GB $4({}%)$2 - {}\n",
-            mount_point.to_string_lossy(),
+            mount_point,
             used as f64 / 1073741824.0,
             size as f64 / 1073741824.0,
             used_percentage as u8,
-            file_system.to_string_lossy()
+            file_system
+        );
+        buffer.push_str(&final_str);
+    }else if btrfs_disks.len() > 1 {
+        match look_for_btrfs_root(btrfs_disks) {
+            Some(disk) => {
+                let file_system = disk.file_system().to_string_lossy();
+                let mount_point = disk.mount_point().to_string_lossy();
+                let size = disk.total_space();
+                let used = size - disk.available_space();
+                let used_percentage = (used as f64 / size as f64) * 100.0;
+                let final_str = format!("$3Disk ({}): $2{:.2} $3GB / $2{:.2} $3GB $4({}%)$2 - {}\n",
+                    mount_point,
+                    used as f64 / 1073741824.0,
+                    size as f64 / 1073741824.0,
+                    used_percentage as u8,
+                    file_system
+                );
+                buffer.push_str(&final_str);
+            }
+            None => {
+                buffer.push_str("$3Disk: $2Unknown");
+            }
+        }
+    }
+
+    for disk in selected_disks.iter() {
+        let file_system = disk.file_system().to_string_lossy();
+        let mount_point = disk.mount_point().to_string_lossy();
+        let size = disk.total_space();
+        let used = size - disk.available_space();
+        let used_percentage = (used as f64 / size as f64) * 100.0;
+        let final_str = format!("$3Disk ({}): $2{:.2} $3GB / $2{:.2} $3GB $4({}%)$2 - {}\n",
+            mount_point,
+            used as f64 / 1073741824.0,
+            size as f64 / 1073741824.0,
+            used_percentage as u8,
+            file_system
         );
         buffer.push_str(&final_str);
     }
@@ -189,7 +248,7 @@ async fn fetch_terminal_emulator() -> String {
             "Apple_Terminal" => buffer.push_str("terminal"),
             "iTerm.app" => buffer.push_str("iTerm"),
             "Hyper" => buffer.push_str("hyper"),
-            "Kitty" => buffer.push_str("kitty"),
+            "Kitty" => buffer.push_str("kittbtrfs_volumes.iter().find(|&&disk| disk.mount_point().to_string_lossy() == min_subvolid.0)y"),
             "vscode" => buffer.push_str("vscode"),
             _ => (),
         }
@@ -234,4 +293,37 @@ fn format_time(seconds: u64) -> String {
     parts.push(format!("$2{}$3s$2", seconds));
 
     parts.join(" ")
+}
+
+fn look_for_btrfs_root(btrfs_volumes :Vec<&Disk>) -> Option<&Disk> {
+    match File::open("/proc/mounts") {
+        Ok(file) => {
+            let reader = BufReader::new(file);
+            let lines: Vec<String> = reader.lines().filter_map(Result::ok).collect();
+
+            for line in &lines {
+                if line.starts_with("/") && line.contains("btrfs") && line.contains("subvolid=5"){
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if let Some(disk) = btrfs_volumes.iter().find(|&&disk| disk.mount_point().to_string_lossy() == parts[1]) {
+                        return Some(disk);
+                    }
+                }
+            }
+            let mut min_subvolid: (&str, u32) = ("/", 0);
+            for line in &lines {
+                if line.starts_with("/") && line.contains("btrfs") {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if let Some(subvolid) = parts.iter().find(|&&part| part.starts_with("subvolid=")) {
+                        let subvolid_value: u32 = subvolid[9..].parse().unwrap_or(0);
+                        if min_subvolid.1 == 0 || subvolid_value < min_subvolid.1 {
+                            min_subvolid = (parts[1], subvolid_value);
+                        }
+                    }
+                }
+            }
+            return btrfs_volumes.iter().find(|&&disk| disk.mount_point().to_string_lossy() == min_subvolid.0).copied();
+        }
+        Err(_) => {}
+    }
+    None
 }
