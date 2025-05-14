@@ -6,6 +6,7 @@
   "kernel",
   "uptime",
   "memory",
-  "shell"
+  "shell",
+  "cpu"
   ]
 }

@@ -32,7 +32,7 @@ cd [path/to/rastfetch/bin]
 2) After installing rastfetch for the first time, or if you want to reset your configuration, run:
 ```bash
 # either
-rastfetch -c
+rastfetch --config
 # or
 mkdir ~/.config/rastfetch/
 cd ~/.config/rastfetch/
@@ -41,7 +41,7 @@ vim config.json
 # with nano
 nano config.json
 ```
-3) (Skip if you used `rastfetch -c`) Copy default config from [default.json](/doc/default.json)
+3) (Skip if you used `rastfetch --config`) Copy default config from [default.json](/doc/default.json)
 4) You can find all available modules in [modules.md](/doc/modules.md). To change which modules are used just and in which order, just add them to the config.json
 5) Run `rastfetch`
 
@@ -63,7 +63,9 @@ rastfetch -lc [file_name]
 
 # Contributions
 
-Contributions meant to expand the list of available modules, increase speed or efficiency or increase support for different distros are very much welcome. All contributions will automaticlly be licensed under the project's [MIT](LICENSE.md) license.
+Contributions meant to expand the list of available modules, increase speed or efficiency or increase support for different distros (see [colors.md](/doc/colors.md)) are very much welcome. 
+
+All contributions will automaticlly be licensed under the project's [MIT](LICENSE.md) license.
 
 # Disclosure
 

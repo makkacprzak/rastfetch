@@ -59,6 +59,7 @@ async fn main() {
         } else {
             io::stdout().write_all(b"Default config file not found\n").unwrap();
         }
+        return;
     }
 
     // Load the config file
