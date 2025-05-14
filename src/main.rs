@@ -31,6 +31,10 @@ struct Args {
     /// Don't print logo
     #[arg(long, default_value_t = false)]
     nologo: bool,
+
+    /// Pick color palette
+    #[arg(short, long)]
+    palette: Option<String>,
 }
 
 #[derive(Parser)]
@@ -112,9 +116,18 @@ async fn main() {
         let split_results = split_multiline_strings(results);
 
         let output_lines = format_terminal_output(&logo_lines, &split_results, max_width + 3);
-        let os = System::name().unwrap_or("Can't find system name".to_string());
-        let binding = &[Color::White];
-        let os_color = *os_map::OS_COLORS.get(os.as_str()).unwrap_or(&(binding as &[Color]));
+        let binding:&[Color] = &[Color::White];
+
+        let os_color = match args.palette.as_deref() {
+            Some(palette) => {
+                os_map::OS_COLORS.get(palette).unwrap_or(&binding)
+            },
+            None =>  {
+                let os = System::name().unwrap_or("Can't find system name".to_string());
+                os_map::OS_COLORS.get(os.as_str()).unwrap_or(&binding)
+            }
+        };
+        
         for line in output_lines {
             print_colored(&line, os_color.to_vec()).unwrap();
         }
@@ -127,9 +140,17 @@ async fn main() {
 
         let split_results = split_multiline_strings(results);
 
-        let os = System::name().unwrap_or("Can't find system name".to_string());
-        let binding = &[Color::White];
-        let os_color = *os_map::OS_COLORS.get(os.as_str()).unwrap_or(&(binding as &[Color]));
+        let binding:&[Color] = &[Color::White];
+        let os_color = match args.palette.as_deref() {
+            Some(palette) => {
+                os_map::OS_COLORS.get(palette).unwrap_or(&binding)
+            },
+            None =>  {
+                let os = System::name().unwrap_or("Can't find system name".to_string());
+                os_map::OS_COLORS.get(os.as_str()).unwrap_or(&binding)
+            }
+        };
+        
         for line in split_results {
             print_colored(&line, os_color.to_vec()).unwrap();
         }

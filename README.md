@@ -61,6 +61,17 @@ To use a custom logo, first place it in your `~/.config/rastfetch` directory, an
 rastfetch -l [file_name] -c
 ```
 
+# Change color palette
+1) Check the OS_COLORS map inside [os_map](/src/os_map.rs) to see available color palettes.
+2) Run
+```bash
+rastfetch -p [os_name]
+```
+3) ***Important!*** if the [os_name] has a space in it, for example "Ubuntu Linux", you need to use a "\" before the space, eg.:
+```bash
+rastfetch -p Ubuntu\ Linux
+```
+
 # Contributions
 
 Contributions meant to expand the list of available modules, increase speed or efficiency or increase support for different distros (see [colors.md](/doc/colors.md)) are very much welcome. 

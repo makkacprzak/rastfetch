@@ -37,7 +37,7 @@ pub fn get_module_functions() -> HashMap<&'static str, ModuleFunction> {
 async fn fetch_title() -> String {
     let user = whoami::username();
     let hostname = whoami::devicename();
-    let title = format!("$1{}$2@$1{}$2", user, hostname);
+    let title = format!("\n$1{}$2@$1{}$2", user, hostname);
     title
 }
 async fn fetch_separator() -> String {

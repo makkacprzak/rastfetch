@@ -4,13 +4,14 @@ use termcolor::Color;
 pub static OS_LOGO: phf::Map<&'static str, &'static str> = phf_map! {
     "Fedora Linux" => "fedora",
     "Ubuntu Linux" => "ubuntu",
+    "Bazzite" => "bazzite_full",
     "Darwin" => "macos"
 };
 
 pub static OS_COLORS: phf::Map<&'static str, &'static [Color]> = phf_map! {
     "Fedora Linux" => &[Color::Blue, Color::White, Color::Blue, Color::Green],
     "Ubuntu Linux" => &[Color::Red, Color::White, Color::Red, Color::Green],
-    "Bazzite" => &[Color::Magenta, Color::White, Color::Magenta, Color::Green],
+    "Bazzite" => &[Color::Ansi256(5), Color::White, Color::Ansi256(13), Color::Green],
     "Darwin" => &[Color::Green,Color::White, Color::Yellow, Color::Red, Color::Magenta, Color::Cyan]
 };
 
