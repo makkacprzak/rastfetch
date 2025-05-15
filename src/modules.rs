@@ -1,19 +1,22 @@
+//! This module contains all the asynchronous functions for fetching information, and a HashMap binding module names to these functions
 use sysinfo::{
     CpuRefreshKind, Disk, Disks, MemoryRefreshKind, RefreshKind, System
 };
 use std::collections::HashMap;
-use std::env;
+use std::{env, fs};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::pin::Pin;
 use std::future::Future;
 use std::sync::Arc;
+use std::path::Path;
 use whoami;
 
 use crate::ASSETS;
 
 type ModuleFunction = Arc<dyn Fn() -> Pin<Box<dyn Future<Output = String> + Send>> + Send + Sync>;
 
+/// Hash map mapping functions for fetching information asynchronously to strings present in config file
 pub fn get_module_functions() -> HashMap<&'static str, ModuleFunction> {
         // Map of module names to their respective functions
     let mut module_functions: HashMap<&str, Arc<dyn Fn() -> Pin<Box<dyn Future<Output = String> + Send>> + Send + Sync>> = HashMap::new();
@@ -27,40 +30,76 @@ pub fn get_module_functions() -> HashMap<&'static str, ModuleFunction> {
     module_functions.insert("memory", Arc::new(|| Box::pin(fetch_memory())));
     module_functions.insert("shell", Arc::new(|| Box::pin(fetch_shell())));
     module_functions.insert("cpu", Arc::new(|| Box::pin(fetch_cpu())));
+    module_functions.insert("cpu_usage", Arc::new(|| Box::pin(fetch_cpu_usage())));
     module_functions.insert("swap", Arc::new(|| Box::pin(fetch_swap())));
     module_functions.insert("disks", Arc::new(|| Box::pin(fetch_disks())));
     module_functions.insert("terminal", Arc::new(|| Box::pin(fetch_terminal_emulator())));
-    module_functions.insert("colors", Arc::new(|| Box::pin(fetch_color_palette())));    
+    module_functions.insert("colors", Arc::new(|| Box::pin(fetch_color_palette())));
+    module_functions.insert("bios", Arc::new(|| Box::pin(fetch_bios())));
+    module_functions.insert("editor", Arc::new(|| Box::pin(fetch_editor())));
 
 
     module_functions
 }
 
+/// Title is in (username)@(hostname) format
+/// Data fetched from environment variables
 async fn fetch_title() -> String {
-    let user = whoami::username();
-    let hostname = whoami::devicename();
-    let title = format!("\n$1{}$2@$1{}$2", user, hostname);
+    let user = env::var("USER");
+    let hostname = env::var("HOSTNAME");
+    let title = format!("\n$1{}$2@$1{}$2", user.unwrap_or(format!("{}", "Unknown")), hostname.unwrap_or(format!("{}", "Unknown")));
     title
 }
+/// Just prints a separator
 async fn fetch_separator() -> String {
     let separator = "$2-----------$1";
     separator.to_string()
 }
+/// Fetches disto in a pretty format using whoami
 async fn fetch_os() -> String {
     let os = whoami::distro();
     let os_string = format!("$3OS:$2 {}", os);
     os_string
 }
+/// Fetches kernel name and version from /proc/version
 async fn fetch_kernel() -> String {
-    let kernel = System::kernel_version().unwrap_or("Can't find kernel version".to_string());
-    let kernel_string = format!("$3Kernel:$2 {}", kernel);
+    let file = match fs::read_to_string("/proc/version") {
+        Ok(content) => content,
+        Err(_) => "Unknown".to_string(),
+    };
+    let kernel = {
+        let parts: Vec<&str> = file.split_whitespace().collect();
+        (parts[0].to_string(), parts[2].to_string())
+    };
+    let kernel_string = format!("$3Kernel:$2 {} v{}", kernel.0, kernel.1);
     kernel_string
 }
+/// Fetches uptime using sysinfo
 async fn fetch_uptime() -> String {
     let uptime = System::uptime();
     let uptime_string = format!("$3Uptime:$2 {}", format_time(uptime));
     uptime_string
 }
+/// Formats uptime in a pretty way
+fn format_time(seconds: u64) -> String {
+    let hours = seconds / 3600;
+    let seconds_left_after_hours = seconds % 3600;
+    let minutes = seconds_left_after_hours / 60;
+    let seconds = seconds_left_after_hours % 60;
+
+    let mut parts = Vec::new();
+
+    if hours > 0 {
+        parts.push(format!("$2{}$3h$2", hours));
+    }
+    if minutes > 0 || hours > 0 {
+        parts.push(format!("$2{}$3m$2", minutes));
+    }
+    parts.push(format!("$2{}$3s$2", seconds));
+
+    parts.join(" ")
+}
+/// Fetches used_memory/total_memory - (used)% using sysinfo
 async fn fetch_memory() -> String {
     let sys = System::new_with_specifics(
         RefreshKind::nothing().with_memory(MemoryRefreshKind::everything()),
@@ -76,7 +115,7 @@ async fn fetch_memory() -> String {
     );
     memory_string
 }
-
+/// Fetches shell from the SHELL env variable
 async fn fetch_shell() -> String {
     if let Ok(shell) = std::env::var("SHELL") {
         let shell_name = shell.split('/').last().unwrap_or("Unknown");
@@ -111,7 +150,7 @@ async fn fetch_shell() -> String {
     }
 }
 */
-
+/// Fetches cpu information using sysinfo
 async fn fetch_cpu() -> String {
     let sys = System::new_with_specifics(
         RefreshKind::nothing().with_cpu(CpuRefreshKind::everything())
@@ -129,6 +168,22 @@ async fn fetch_cpu() -> String {
     buffer
 }
 
+/// For now this function is not used, because it is slow.
+/// Fetches CPU usage in percentage using sysinfo
+async fn fetch_cpu_usage() -> String {
+    let mut s = System::new_with_specifics(
+        RefreshKind::nothing().with_cpu(CpuRefreshKind::everything()),
+    );
+    // Wait a bit because CPU usage is based on diff.
+    std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
+    // Refresh CPUs again to get actual value.
+    s.refresh_cpu_all();
+    let cpus = s.cpus();
+    let cpu = &cpus[0];
+    let cpu_usage = cpu.cpu_usage();
+    format!( "$3CPU Usage: $4{:.2}%$2", cpu_usage)
+}
+/// Fetches used_swap/total_swap - (used)%
 async fn fetch_swap() -> String {
     let sys = System::new_with_specifics(
         RefreshKind::nothing().with_memory(MemoryRefreshKind::everything())
@@ -144,7 +199,7 @@ async fn fetch_swap() -> String {
     );
     swap_string
 }
-
+/// Fetches disk information using sysinfo and/or /proc/mounts
 async fn fetch_disks() -> String {
     let disks = Disks::new_with_refreshed_list();
     let mut buffer = String::new();
@@ -215,7 +270,7 @@ async fn fetch_disks() -> String {
     buffer
 }
 
-
+/// Formats disk information
 fn format_disk_info(disk: &Disk) -> String {
     let file_system = disk.file_system().to_string_lossy();
     let mount_point = disk.mount_point().to_string_lossy();
@@ -230,9 +285,10 @@ fn format_disk_info(disk: &Disk) -> String {
         file_system
     )
 }
-
+/// Checks what terminal you're using by trying environment variables associated with common terminal emulators
+/// If no matches are found, prints the terminals framework
 async fn fetch_terminal_emulator() -> String {
-    // Najpierw sprawdzamy bardziej jednoznaczne zmienne
+    // Check common emulators
     let mut buffer = "$3Terminal: $2".to_string();
     if let Ok(_) = env::var("ALACRITTY_LOG") {
         buffer.push_str("alacritty");
@@ -250,17 +306,17 @@ async fn fetch_terminal_emulator() -> String {
         buffer.push_str("kosnole");
         return buffer;
     }
-    if let Ok(test_program) = env::var("TERM_PROGRAM") {
-        match test_program.as_str() {
+    if let Ok(term_program) = env::var("TERM_PROGRAM") {
+        match term_program.as_str() {
             "Apple_Terminal" => buffer.push_str("terminal"),
             "iTerm.app" => buffer.push_str("iTerm"),
             "Hyper" => buffer.push_str("hyper"),
-            "Kitty" => buffer.push_str("kittbtrfs_volumes.iter().find(|&&disk| disk.mount_point().to_string_lossy() == min_subvolid.0)y"),
+            "Kitty" => buffer.push_str("kitty"),
             "vscode" => buffer.push_str("vscode"),
-            _ => (),
+            _ => buffer.push_str(&term_program),
         }
     }
-    // Jeśli nic nie znaleziono, sprawdzamy bardziej ogólne zmienne
+    // If nothing found check terminal framework
     if let Ok(term) = env::var("TERM") {
         match term.as_str() {
             "xterm-kitty" => buffer.push_str("kitty"),
@@ -272,7 +328,7 @@ async fn fetch_terminal_emulator() -> String {
     }
     buffer
 }
-
+/// Fetches color palette file from embeded "assets" directory
 async fn fetch_color_palette() -> String {
             let path = format!("ansi/palette.ansi.txt");
             if let Some(file) = ASSETS.get_file(path) {
@@ -282,22 +338,24 @@ async fn fetch_color_palette() -> String {
                 "Palette file not found".to_string()
             }
 }
-
-fn format_time(seconds: u64) -> String {
-    let hours = seconds / 3600;
-    let seconds_left_after_hours = seconds % 3600;
-    let minutes = seconds_left_after_hours / 60;
-    let seconds = seconds_left_after_hours % 60;
-
-    let mut parts = Vec::new();
-
-    if hours > 0 {
-        parts.push(format!("$2{}$3h$2", hours));
-    }
-    if minutes > 0 || hours > 0 {
-        parts.push(format!("$2{}$3m$2", minutes));
-    }
-    parts.push(format!("$2{}$3s$2", seconds));
-
-    parts.join(" ")
+/// Fetches bios information from /sys/class/dmi/id/ and /sys/firmware/efi/ directories
+async fn fetch_bios() -> String {
+    let bios_version = fs::read_to_string("/sys/class/dmi/id/bios_version")
+        .unwrap_or_else(|_| "Unknown".to_string());
+    let bios_release =  fs::read_to_string("/sys/class/dmi/id/bios_release")
+        .unwrap_or_else(|_| "Unknown".to_string());
+    let bios_version = bios_version.trim();
+    let bios_release = bios_release.trim();
+    let path = Path::new("/sys/firmware/efi");
+    let bios_type = match path.exists() {
+        true => "UEFI",
+        false => "Legacy",
+    }; 
+    format!("$3BIOS ({}): $2{} {}$1",bios_type ,bios_version, bios_release)
+}  
+/// Fetches default editor from env variable
+async fn fetch_editor() -> String {
+    let editor = env::var("EDITOR").unwrap_or_else(|_| "Unknown".to_string());
+    let editor_name = editor.split('/').last().unwrap_or("Unknown");
+    format!("$3Editor:$2 {}", editor_name)
 }

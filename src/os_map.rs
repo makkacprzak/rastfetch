@@ -1,6 +1,8 @@
+//! This module contains all perfect hash maps used for localising rastfetch for different distros and systems
 use phf::phf_map;
 use termcolor::Color;
 
+/// A static perfect hash map, maping the distro's ID found in /etc/os-release (or in case of MacOs its kernel's name) to its logo's name
 pub static OS_LOGO: phf::Map<&'static str, &'static str> = phf_map! {
     "fedora" => "fedora",
     "ubuntu" => "ubuntu",
@@ -13,6 +15,7 @@ pub static OS_LOGO: phf::Map<&'static str, &'static str> = phf_map! {
     "endeavouros" => "endeavouros"
 };
 
+/// A static perfect hash map, maping the distro's ID found in /etc/os-release (or in case of MacOs its kernel's name) to its color palette
 pub static OS_COLORS: phf::Map<&'static str, &'static [Color]> = phf_map! {
     "fedora" => &[Color::Ansi256(12), Color::White, Color::Blue, Color::Green],
     "ubuntu" => &[Color::Rgb(255, 69, 0), Color::White, Color::Red, Color::Green],
