@@ -67,10 +67,6 @@ rastfetch -l [file_name] -c
 ```bash
 rastfetch -p [os_name]
 ```
-3) ***Important!*** if the [os_name] has a space in it, for example "Ubuntu Linux", you need to use a "\" before the space, eg.:
-```bash
-rastfetch -p Ubuntu\ Linux
-```
 
 # Contributions
 
