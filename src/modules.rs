@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::path::Path;
 use whoami;
 
-use crate::ASSETS;
+use crate::{os_map, ASSETS};
 
 type ModuleFunction = Arc<dyn Fn() -> Pin<Box<dyn Future<Output = String> + Send>> + Send + Sync>;
 
@@ -37,6 +37,8 @@ pub fn get_module_functions() -> HashMap<&'static str, ModuleFunction> {
     module_functions.insert("colors", Arc::new(|| Box::pin(fetch_color_palette())));
     module_functions.insert("bios", Arc::new(|| Box::pin(fetch_bios())));
     module_functions.insert("editor", Arc::new(|| Box::pin(fetch_editor())));
+    module_functions.insert("platform", Arc::new(|| Box::pin(fetch_platform())));
+    module_functions.insert("chassis", Arc::new(|| Box::pin(fetch_chassis())));
 
 
     module_functions
@@ -358,4 +360,16 @@ async fn fetch_editor() -> String {
     let editor = env::var("EDITOR").unwrap_or_else(|_| "Unknown".to_string());
     let editor_name = editor.split('/').last().unwrap_or("Unknown");
     format!("$3Editor:$2 {}", editor_name)
+}
+
+async fn fetch_platform() -> String {
+    let platform = whoami::platform();
+    format!("$3Platform: $2{}", platform)
+}
+
+async fn fetch_chassis() -> String {
+    let chassis_code = fs::read_to_string("/sys/class/dmi/id/chassis_type").unwrap_or("Unknown".to_string());
+    let code_trimmed = chassis_code.trim();
+    let chassis_type = *os_map::CHASSIS_TYPES.get(code_trimmed).unwrap_or(&"Unknown chassis code");
+    format!("$3Chassis: $2{}", chassis_type)
 }

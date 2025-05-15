@@ -28,6 +28,46 @@ pub static OS_COLORS: phf::Map<&'static str, &'static [Color]> = phf_map! {
     "endeavouros" => &[Color::Ansi256(9), Color::White, Color::Magenta, Color::Ansi256(12)],
 };
 
+pub static CHASSIS_TYPES: phf::Map<&'static str, &'static str> = phf_map! {
+    "1" => "Other",
+    "2" => "Unknown",
+    "3" => "Desktop",
+    "4" => "Low Profile Desktop",
+    "5" => "Pizza Box",
+    "6" => "Mini Tower",
+    "7" => "Tower",
+    "8" => "Portable",
+    "9" => "Laptop",
+    "10" => "Notebook",
+    "11" => "Handheld",
+    "12" => "Docking Station",
+    "13" => "All in One",
+    "14" => "Sub Notebook",
+    "15" => "Space-saving",
+    "16" => "Lunch Box",
+    "17" => "Main System Chassis",
+    "18" => "Expansion Chassis",
+    "19" => "SubChassis",
+    "20" => "Bus Expansion Chassis",
+    "21" => "Periferal Chassis",
+    "22" => "Storage Chassis",
+    "23" => "Rack Mount Chassis",
+    "24" => "Sealed-Case PC",
+    "25" => "Multi-system Chassis",
+    "26" => "Compact PCI",
+    "27" => "Advanced TCA",
+    "28" => "Blade",
+    "29" => "Blade Enclosure",
+    "30" => "Tablet",
+    "31" => "Convertible",
+    "32" => "Detachable",
+    "33" => "IoT Gateway",
+    "34" => "Embedded PC",
+    "35" => "Mini PC",
+    "36" => "Stick PC",
+    "Unknown" => "Unknown"
+};
+
 /* this part is temporarily disabled
 the function using it is too slow
 pub static SHELL_VERSIONS: phf::Map<&'static str, &'static str> = phf_map! {

@@ -3,6 +3,8 @@
   "title",
   "separator",
   "os",
+  "chassis",
+  "platform",
   "kernel",
   "bios",
   "shell",
