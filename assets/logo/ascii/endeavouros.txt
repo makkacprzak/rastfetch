@@ -1,15 +1,15 @@
-                     $2./$1o$3.
-                   $2./$1sssso$3-
-                 $2`:$1osssssss+$3-
-               $2`:+$1sssssssssso$3/.
-             $2`-/o$1ssssssssssssso$3/.
-           $2`-/+$1sssssssssssssssso$3+:`
-         $2`-:/+$1sssssssssssssssssso$3+/.
-       $2`.://o$1sssssssssssssssssssso$3++-
-      $2.://+$1ssssssssssssssssssssssso$3++:
-    $2.:///o$1ssssssssssssssssssssssssso$3++:
-  $2`:////$1ssssssssssssssssssssssssssso$3+++.
-$2`-////+$1ssssssssssssssssssssssssssso$3++++-
- $2`..-+$1oosssssssssssssssssssssssso$3+++++/`
-   $3./++++++++++++++++++++++++++++++/:.
-  `:::::::::::::::::::::::::------``
+                     $1./$3o$4.
+                   $1./$3sssso$4-
+                 $1`:$3osssssss+$4-
+               $1`:+$3sssssssssso$4/.
+             $1`-/o$3ssssssssssssso$4/.
+           $1`-/+$3sssssssssssssssso$4+:`
+         $1`-:/+$3sssssssssssssssssso$4+/.
+       $1`.://o$3sssssssssssssssssssso$4++-
+      $1.://+$3ssssssssssssssssssssssso$4++:
+    $1.:///o$3ssssssssssssssssssssssssso$4++:
+  $1`:////$3ssssssssssssssssssssssssssso$4+++.
+$1`-////+$3ssssssssssssssssssssssssssso$4++++-
+ $1`..-+$3oosssssssssssssssssssssssso$4+++++/`
+   $4./++++++++++++++++++++++++++++++/:.
+  $4`:::::::::::::::::::::::::------``

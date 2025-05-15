@@ -7,14 +7,22 @@ pub static OS_LOGO: phf::Map<&'static str, &'static str> = phf_map! {
     "bazzite" => "bazzite_full",
     "Darwin" => "macos",
     "zorin" => "zorin",
+    "arch" => "arch",
+    "debian" => "debian",
+    "linuxmint" => "linuxmint",
+    "endeavouros" => "endeavouros"
 };
 
 pub static OS_COLORS: phf::Map<&'static str, &'static [Color]> = phf_map! {
-    "fedora" => &[Color::Blue, Color::White, Color::Blue, Color::Green],
-    "ubuntu" => &[Color::Red, Color::White, Color::Red, Color::Green],
-    "bazzite" => &[Color::Ansi256(5), Color::White, Color::Ansi256(13), Color::Green],
+    "fedora" => &[Color::Ansi256(12), Color::White, Color::Blue, Color::Green],
+    "ubuntu" => &[Color::Rgb(255, 69, 0), Color::White, Color::Red, Color::Green],
+    "bazzite" => &[Color::Rgb(8, 83, 174), Color::White, Color::Rgb(186, 43, 226), Color::Green],
     "Macos" => &[Color::Green,Color::White, Color::Yellow, Color::Red, Color::Magenta, Color::Cyan],
     "zorin" => &[Color::Cyan, Color::White, Color::Cyan, Color::Green],
+    "arch" => &[Color::Blue, Color::White, Color::Blue, Color::Green],
+    "debian" => &[Color::Red, Color::White, Color::Red, Color::Green],
+    "linuxmint" => &[Color::Ansi256(10), Color::White, Color::Green, Color::Green],
+    "endeavouros" => &[Color::Ansi256(9), Color::White, Color::Magenta, Color::Ansi256(12)],
 };
 
 /* this part is temporarily disabled
