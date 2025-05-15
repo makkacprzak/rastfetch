@@ -108,7 +108,7 @@ async fn fetch_memory() -> String {
     let used_memory = sys.used_memory();
     let used_percentage = (used_memory as f64 / total_memory as f64) * 100.0;
     let memory_string = format!(
-        "$3Memory Used: $2{:.2} $3GB / $2{:.2} $3GB $4({}%)$2",
+        "$3Memory Used: $2{:.2} $3GiB / $2{:.2} $3GiB $4({}%)$2",
         used_memory as f64 / 1073741824.0,
         total_memory as f64 / 1073741824.0,
         used_percentage as u8
@@ -192,7 +192,7 @@ async fn fetch_swap() -> String {
     let used_swap = sys.used_swap();
     let swap_percentage = (used_swap as f64 / total_swap as f64) * 100.0;
     let swap_string = format!(
-        "$3Swap Used: $2{:.2} $3GB / $2{:.2} $3GB $4({}%)$2",
+        "$3Swap Used: $2{:.2} $3GiB / $2{:.2} $3GiB $4({}%)$2",
         used_swap as f64 / 1073741824.0,
         total_swap as f64 / 1073741824.0,
         swap_percentage as u8
@@ -277,7 +277,7 @@ fn format_disk_info(disk: &Disk) -> String {
     let size = disk.total_space();
     let used = size - disk.available_space();
     let used_percentage = (used as f64 / size as f64) * 100.0;
-    format!("$3Disk ({}): $2{:.2} $3GB / $2{:.2} $3GB $4({}%)$2 - {}\n",
+    format!("$3Disk ({}): $2{:.2} $3GiB / $2{:.2} $3GiB $4({}%)$2 - {}\n",
         mount_point,
         used as f64 / 1073741824.0,
         size as f64 / 1073741824.0,
