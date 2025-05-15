@@ -1,11 +1,12 @@
 use clap::Parser;
 use std::fs;
+use std::fs::File;
 use std::env;
 use sysinfo::{
     System
 };
 use include_dir::{include_dir, Dir};
-use std::io::{self, Write};
+use std::io::{self, Write, BufReader, BufRead};
 use serde_json::Value;
 use tokio::sync::mpsc;
 use tokio::task;
@@ -123,7 +124,7 @@ async fn main() {
                 os_map::OS_COLORS.get(palette).unwrap_or(&binding)
             },
             None =>  {
-                let os = System::name().unwrap_or("Can't find system name".to_string());
+                let os = get_os_id().unwrap_or("Can't find system name".to_string());
                 os_map::OS_COLORS.get(os.as_str()).unwrap_or(&binding)
             }
         };
@@ -146,7 +147,7 @@ async fn main() {
                 os_map::OS_COLORS.get(palette).unwrap_or(&binding)
             },
             None =>  {
-                let os = System::name().unwrap_or("Can't find system name".to_string());
+                let os = get_os_id().unwrap_or("Can't find system name".to_string());
                 os_map::OS_COLORS.get(os.as_str()).unwrap_or(&binding)
             }
         };
@@ -156,6 +157,26 @@ async fn main() {
         }
     }
 
+}
+
+fn get_os_id() -> Option<String> {
+    match File::open("/etc/os-release") {
+        Ok(file) => {
+            let reader = BufReader::new(file);
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    if line.starts_with("ID=") {
+                        return Some(line["ID=".len()..].trim_matches('"').to_string());
+                    }
+                }
+            }
+            None
+        }
+        Err(_) => {
+            let os = System::name().unwrap_or("Can't find system name".to_string());
+            Some(os)
+        }
+    }
 }
 
 
@@ -179,7 +200,7 @@ fn read_logo(args: &Args) -> String {
             }
         }
     }else{
-        let os = System::name().unwrap_or("Can't find system name".to_string());
+        let os = get_os_id().unwrap();
         let os_short =  *os_map::OS_LOGO.get(&os).unwrap_or(&"unknown");
         let path = format!("logo/ascii/{}.txt", os_short);
         

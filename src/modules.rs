@@ -1,8 +1,10 @@
 use sysinfo::{
-    CpuRefreshKind, MemoryRefreshKind, RefreshKind, System, Disks
+    CpuRefreshKind, Disk, Disks, MemoryRefreshKind, RefreshKind, System
 };
 use std::collections::HashMap;
 use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::pin::Pin;
 use std::future::Future;
 use std::sync::Arc;
@@ -45,7 +47,7 @@ async fn fetch_separator() -> String {
     separator.to_string()
 }
 async fn fetch_os() -> String {
-    let os = System::name().unwrap_or("Can't find system name".to_string());
+    let os = whoami::distro();
     let os_string = format!("$3OS:$2 {}", os);
     os_string
 }
@@ -143,27 +145,91 @@ async fn fetch_swap() -> String {
     swap_string
 }
 
-async fn  fetch_disks() -> String {
+async fn fetch_disks() -> String {
     let disks = Disks::new_with_refreshed_list();
     let mut buffer = String::new();
+    let mut selected_disks = vec![];
+    let mut root_btrfs_disk = None;
+    let mut min_subvolid_disk = None;
+    let mut min_subvolid = u32::MAX;
+    let mut mounts = None;
+
     for disk in disks.list() {
-        let mount_point = disk.mount_point();
-        let size = disk.total_space();
-        let used = size - disk.available_space();
-        let file_system = disk.file_system();
-        let used_percentage = (used as f64 / size as f64) * 100.0;
-        let final_str = format!("$3Disk ({}): $2{:.2} $3GB / $2{:.2} $3GB $4({}%)$2 - {}\n",
-            mount_point.to_string_lossy(),
-            used as f64 / 1073741824.0,
-            size as f64 / 1073741824.0,
-            used_percentage as u8,
-            file_system.to_string_lossy()
-        );
-        buffer.push_str(&final_str);
+        let file_system = disk.file_system().to_string_lossy();
+        let mount_point = disk.mount_point().to_string_lossy();
+        if file_system == "vfat" || file_system == "overlay" || mount_point == "/boot" {
+            continue;
+        }
+
+        if file_system == "btrfs" {
+            if mount_point == "/" {
+                root_btrfs_disk = Some(disk);
+                break;
+            }
+
+            // Lazily read /proc/mounts only if we actually encounter a btrfs disk
+            if mounts.is_none() {
+                mounts = match File::open("/proc/mounts") {
+                    Ok(file) => Some(BufReader::new(file)
+                        .lines()
+                        .filter_map(Result::ok)
+                        .collect::<Vec<String>>()),
+                    Err(_) => None,
+                };
+            }
+
+            if let Some(mount_lines) = &mounts {
+                for line in mount_lines {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() > 2 && parts[1] == mount_point && parts[2] == "btrfs" {
+                        if line.contains("subvolid=5") {
+                            root_btrfs_disk = Some(disk);
+                            break;
+                        }
+                        if let Some(subvolid) = parts.iter().find(|&&part| part.starts_with("subvolid=")) {
+                            let subvolid_value = subvolid[9..].parse().unwrap_or(u32::MAX);
+                            if subvolid_value < min_subvolid {
+                                min_subvolid = subvolid_value;
+                                min_subvolid_disk = Some(disk);
+                            }
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+        selected_disks.push(disk);
     }
+
+    // Prefer root btrfs disk, fall back to the one with the smallest subvolid
+    if let Some(disk) = root_btrfs_disk.or(min_subvolid_disk) {
+        buffer.push_str(&format_disk_info(disk));
+    } else if !selected_disks.is_empty() {
+        for disk in selected_disks {
+            buffer.push_str(&format_disk_info(disk));
+        }
+    } else {
+        buffer.push_str("$3Disk: $2Unknown\n");
+    }
+
     buffer
 }
 
+
+fn format_disk_info(disk: &Disk) -> String {
+    let file_system = disk.file_system().to_string_lossy();
+    let mount_point = disk.mount_point().to_string_lossy();
+    let size = disk.total_space();
+    let used = size - disk.available_space();
+    let used_percentage = (used as f64 / size as f64) * 100.0;
+    format!("$3Disk ({}): $2{:.2} $3GB / $2{:.2} $3GB $4({}%)$2 - {}\n",
+        mount_point,
+        used as f64 / 1073741824.0,
+        size as f64 / 1073741824.0,
+        used_percentage as u8,
+        file_system
+    )
+}
 
 async fn fetch_terminal_emulator() -> String {
     // Najpierw sprawdzamy bardziej jednoznaczne zmienne
@@ -189,7 +255,7 @@ async fn fetch_terminal_emulator() -> String {
             "Apple_Terminal" => buffer.push_str("terminal"),
             "iTerm.app" => buffer.push_str("iTerm"),
             "Hyper" => buffer.push_str("hyper"),
-            "Kitty" => buffer.push_str("kitty"),
+            "Kitty" => buffer.push_str("kittbtrfs_volumes.iter().find(|&&disk| disk.mount_point().to_string_lossy() == min_subvolid.0)y"),
             "vscode" => buffer.push_str("vscode"),
             _ => (),
         }
