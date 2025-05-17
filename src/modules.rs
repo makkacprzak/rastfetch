@@ -65,15 +65,19 @@ async fn fetch_os() -> String {
 }
 /// Fetches kernel name and version from /proc/version
 async fn fetch_kernel() -> String {
-    let file = match fs::read_to_string("/proc/version") {
-        Ok(content) => content,
-        Err(_) => "Unknown".to_string(),
+    let kernel_string: String = match fs::read_to_string("/proc/version") {
+        Ok(content) => {
+            let kernel = {
+                let parts: Vec<&str> = content.split_whitespace().collect();
+                (parts[0].to_string(), parts[2].to_string())
+            };
+            format!("$3Kernel:$2 {} v{}", kernel.0, kernel.1)
+        }
+        Err(_) => {
+            let kernel_version = System::kernel_long_version();
+            format!("$3Kernel:$2 {}", kernel_version)
+        }
     };
-    let kernel = {
-        let parts: Vec<&str> = file.split_whitespace().collect();
-        (parts[0].to_string(), parts[2].to_string())
-    };
-    let kernel_string = format!("$3Kernel:$2 {} v{}", kernel.0, kernel.1);
     kernel_string
 }
 /// Fetches uptime using sysinfo

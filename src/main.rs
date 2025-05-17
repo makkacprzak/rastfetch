@@ -1,12 +1,11 @@
 use clap::Parser;
-use std::fs;
-use std::fs::File;
+use std::fs::{self, File};
 use std::env;
 use sysinfo::{
     System
 };
 use include_dir::{include_dir, Dir};
-use std::io::{self, Write, BufReader, BufRead};
+use std::io::{self, BufRead, BufReader, Write};
 use serde_json::Value;
 use tokio::sync::mpsc;
 use tokio::task;
@@ -73,8 +72,6 @@ async fn main() {
         }
         return;
     }
-    
-
 
     // Load the config file
     let modules = get_modules().unwrap();
